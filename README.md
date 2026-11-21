@@ -1,29 +1,26 @@
 # MT5 Web Trade Copier
 
-An offline Python demo of the two-way synchronization engine from an IntelliPrime Web and MetaTrader 5 demo-account copier. The engine pairs positions opened on either platform, propagates stop-loss and take-profit edits, and reconciles partial and full closes. This edition runs locally with simulated accounts and Python's standard library.
+A runnable Python demonstration of bidirectional position synchronization, inspired by an IntelliPrime Web and MetaTrader 5 demo-account project. Either simulated platform can originate a change.
 
-## Run the demo tests
+## Run locally
 
-From the repository root with Python 3.10 or newer:
+Use Python 3.10 or newer. The example uses only the standard library.
 
 ```sh
+python demo.py
 python -m unittest discover -s tests -v
 ```
 
-The eight tests exercise both copy directions, partial and full closes, stop changes, stale quotes, definite rejections, and uncertain submissions. For example, one test opens a synthetic 0.02-lot position, reduces it to 0.01 on the web side, then checks that the paired MT5 position shrinks without a second opening order.
+The example opens a synthetic 0.02-lot gold position on the web side, reduces its MT5 counterpart to 0.01, and closes the pair from the web side. It prints both simulated accounts after each step. The last line shows two empty accounts.
 
-## How the copier handles retries
+## Why keep a pair of identifiers?
 
-Each position pair stores the identifiers assigned by both platforms. The engine uses those identifiers on its next observation so that a copied position does not trigger a copy back to the original account.
+Each platform assigns a local identifier. The copier records the link in both directions, so a later stop change or partial close can find its counterpart. When an observation matches the position already recorded, the copier skips it. This keeps an echoed opening update from spawning a second pair.
 
-Before requesting an operation, the engine writes an intent to a SQLite journal. A stale quote detected before submission allows a later attempt. A timeout after submission leaves the outcome uncertain: repeating the order could duplicate a position. The journal records the uncertainty and pauses reconciliation until it is resolved.
+## What the tests cover
 
-## Source layout
+The lifecycle test runs once with each platform as origin. It checks replayed observations, stop-loss and take-profit edits, partial closes, and removal of both positions after a full close.
 
-| File | Purpose |
-| --- | --- |
-| `sync_core.py` | Pair tracking, persistent operation journal, and reconciliation |
-| `trade_model.py` | Position representation shared by the simulated platforms |
-| `tests/test_sync.py` | In-memory accounts, controlled clock, and executable scenarios |
+## Scope
 
-This portfolio edition uses the project's archived synchronization core. The broker website, MT5 terminal, and private deployment configuration are outside the scope of the offline tests.
+This public edition is an independently written, in-memory simulation. All positions are synthetic. The original project also explored SQLite operation journaling and ambiguous order responses. This repository demonstrates pairing and reconciliation only. It requires no broker login or MT5 installation.
